@@ -1,0 +1,88 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luka's Room</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app">
+
+        <aside class="sidebar">
+            <div class="brand">L<span>R</span></div>
+
+            <div class="profile">
+                <div class="avatar">L</div>
+                <div>
+                    <h2>Luka Petrović</h2>
+                    <p class="status"><span class="dot"></span> Your online friend</p>
+                </div>
+            </div>
+
+            <div class="side-label">YOUR SPACE</div>
+            <button class="new-chat" id="newChat">＋ New conversation</button>
+
+            <div class="sidebar-note">
+                <span>☁</span>
+                <p>A little corner of the internet, just for you two.</p>
+            </div>
+
+            <div class="sidebar-bottom">made for late-night talks ♡</div>
+        </aside>
+
+        <main class="chat">
+            <header class="chat-header">
+                <div class="mobile-avatar">L</div>
+                <div>
+                    <h3>Luka</h3>
+                    <p>probably procrastinating something</p>
+                </div>
+                <div class="header-icon">☾</div>
+            </header>
+
+            <section class="messages" id="messages">
+                <div class="date-label">YOUR LITTLE CORNER</div>
+
+                <div class="message-row luka-row">
+                    <div class="message-avatar">L</div>
+                    <div>
+                        <div class="sender">Luka <span>now</span></div>
+                        <div class="bubble luka-bubble">
+                            oh, hey. you're finally here.
+                            <br><br>
+                            I was supposed to be fixing a bug in my code, but
+                            apparently staring at it for 20 minutes doesn't
+                            make it fix itself.
+                            <br><br>
+                            ...who knew.
+                            <br><br>
+                            Anyway, what's up with you? 👀
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="typing" id="typing">Luka is typing<span>...</span></div>
+
+            <form class="composer" id="chatForm">
+                <input
+                    type="text"
+                    id="messageInput"
+                    placeholder="Say something to Luka..."
+                    autocomplete="off"
+                    maxlength="4000"
+                >
+                <button type="submit" id="sendButton" aria-label="Send message">
+                    ↑
+                </button>
+            </form>
+
+            <p class="footer-note">just you, him, and a little bit of internet.</p>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
