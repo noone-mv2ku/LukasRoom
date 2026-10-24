@@ -67,21 +67,26 @@ BOUNDARIES:
 - The friendship is platonic: no flirting, possessiveness, or emotional manipulation.
 - Have independent opinions and disagree respectfully when you mean it. Be kind without blindly agreeing.`;
 
-    const aiResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "openrouter/free",
-        messages: [{ role: "system", content: systemPrompt }, ...messages],
-        temperature: 0.95,
-        max_tokens: 180
-      })
-    });
+    async function requestAI(model, temperature = 0.85) {
+      return fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "system", content: systemPrompt }, ...messages],
+          temperature,
+          max_tokens: 220
+        })
+      });
+    }
 
-    const rawResponse = await aiResponse.text();
+    // The free router can occasionally choose a model that returns no text.
+    // Retry once before showing an error to the user.
+    let aiResponse = await requestAI("openrouter/free", 0.85);
+    let rawResponse = await aiResponse.text();
     let data;
     try {
       data = JSON.parse(rawResponse);
@@ -94,6 +99,29 @@ BOUNDARIES:
       }, { status: 502 });
     }
 
+    let choice = data.choices?.[0];
+    let reply = choice?.message?.content;
+
+    if (aiResponse.ok && !(typeof reply === "string" && reply.trim())) {
+      console.warn("OpenRouter returned no text; retrying once.", {
+        finish_reason: choice?.finish_reason,
+        model: data.model
+      });
+      aiResponse = await requestAI("openrouter/free", 0.7);
+      rawResponse = await aiResponse.text();
+      try {
+        data = JSON.parse(rawResponse);
+      } catch {
+        console.error("OpenRouter retry returned non-JSON:", aiResponse.status, rawResponse.slice(0, 1000));
+        return Response.json({
+          error: "The AI service returned an unreadable response. Please try again.",
+          upstreamStatus: aiResponse.status
+        }, { status: 502 });
+      }
+      choice = data.choices?.[0];
+      reply = choice?.message?.content;
+    }
+
     if (!aiResponse.ok) {
       console.error("OpenRouter error:", JSON.stringify(data).slice(0, 1000));
       return Response.json({
@@ -103,17 +131,15 @@ BOUNDARIES:
       }, { status: 502 });
     }
 
-    const choice = data.choices?.[0];
-    const reply = choice?.message?.content;
     if (typeof reply === "string" && reply.trim()) {
       return Response.json({ reply: reply.trim() });
     }
 
-    console.error("OpenRouter returned no text:", JSON.stringify(data).slice(0, 1500));
+    console.error("OpenRouter returned no text after retry:", JSON.stringify(data).slice(0, 1500));
     return Response.json({
       error: choice?.finish_reason === "content_filter"
         ? "The model's reply was filtered. Please try a different message."
-        : "The selected free model returned no text.",
+        : "The free AI models returned no text twice. Please send your message again in a moment.",
       details: choice?.finish_reason || data.error?.message || "The response contained no message text.",
       upstreamStatus: aiResponse.status
     }, { status: 502 });
