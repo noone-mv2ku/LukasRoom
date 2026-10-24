@@ -1,6 +1,6 @@
 // These two values are public Supabase project settings, not passwords.
 // Replace the placeholders with your own Project URL and Publishable key.
-const SUPABASE_URL = "https://sdbxxvfhuxpqdaxjvkiy.supabase.co/rest/v1/";
+const SUPABASE_URL = "https://sdbxxvfhuxpqdaxjvkiy.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_jpzmnHnZR60G_VK_wHF_bw_gb6BnB_h";
 
 const messagesArea = document.getElementById("messages");
