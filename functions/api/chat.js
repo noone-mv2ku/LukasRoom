@@ -69,15 +69,42 @@ You are a fictional AI character; do not claim to be a real human or invent shar
       })
     });
 
-    const data = await aiResponse.json();
-    if (!aiResponse.ok) {
-      console.error("OpenRouter error:", JSON.stringify(data).slice(0, 1000));
-      return Response.json({ error: data.error?.message || "The AI service could not answer. Check OpenRouter key and model availability." }, { status: 502 });
+    const rawResponse = await aiResponse.text();
+    let data;
+    try {
+      data = JSON.parse(rawResponse);
+    } catch {
+      console.error("OpenRouter returned non-JSON:", aiResponse.status, rawResponse.slice(0, 1000));
+      return Response.json({
+        error: "OpenRouter returned an unexpected response.",
+        details: rawResponse.slice(0, 500),
+        upstreamStatus: aiResponse.status
+      }, { status: 502 });
     }
 
-    const reply = data.choices?.[0]?.message?.content;
-    if (!reply) return Response.json({ error: "No reply was returned by the model." }, { status: 502 });
-    return Response.json({ reply });
+    if (!aiResponse.ok) {
+      console.error("OpenRouter error:", JSON.stringify(data).slice(0, 1000));
+      return Response.json({
+        error: data.error?.message || "The AI service could not answer.",
+        details: data.error?.metadata?.raw || data.error?.code || null,
+        upstreamStatus: aiResponse.status
+      }, { status: 502 });
+    }
+
+    const choice = data.choices?.[0];
+    const reply = choice?.message?.content;
+    if (typeof reply === "string" && reply.trim()) {
+      return Response.json({ reply: reply.trim() });
+    }
+
+    console.error("OpenRouter returned no text:", JSON.stringify(data).slice(0, 1500));
+    return Response.json({
+      error: choice?.finish_reason === "content_filter"
+        ? "The model's reply was filtered. Please try a different message."
+        : "The selected free model returned no text.",
+      details: choice?.finish_reason || data.error?.message || "The response contained no message text.",
+      upstreamStatus: aiResponse.status
+    }, { status: 502 });
   } catch (error) {
     console.error("Chat function error:", error);
     return Response.json({ error: "Something went wrong while generating a reply." }, { status: 500 });
