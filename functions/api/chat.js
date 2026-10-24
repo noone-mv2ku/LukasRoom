@@ -18,7 +18,13 @@ export async function onRequestPost({ request, env }) {
     });
 
     if (!authResponse.ok) {
-      return Response.json({ error: "Your session is invalid. Please sign in again." }, { status: 401 });
+      const authErrorText = await authResponse.text();
+      console.error("Supabase auth verification failed:", authResponse.status, authErrorText.slice(0, 500));
+      return Response.json({
+        error: "Supabase rejected the session.",
+        details: authErrorText.slice(0, 500),
+        upstreamStatus: authResponse.status
+      }, { status: 401 });
     }
 
     const user = await authResponse.json();
